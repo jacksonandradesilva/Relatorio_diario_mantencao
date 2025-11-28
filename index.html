@@ -37,7 +37,7 @@
         }
         
         header {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), #1a2530);
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -45,16 +45,63 @@
         
         .header-content {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         
-        h1 {
-            font-size: 1.8rem;
+        .header-logo {
+            width: 120px;
+            height: 120px;
+            margin-right: 150px;
+            flex-shrink: 0;
+        }
+        
+        .header-logo img {
+            width: 200%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .header-text {
+            flex: 1;
+            min-width: 300px;
         }
         
         .date-display {
             font-size: 1.2rem;
+            text-align: right;
+            margin-left: auto;
+        }
+        
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .slogan {
+            font-size: 1.1rem;
+            font-weight: 300;
+            opacity: 0.9;
+            font-style: italic;
+            border-left: 3px solid var(--secondary-color);
+            padding-left: 10px;
+            margin-top: 5px;
+        }
+        
+        .date-display {
+            font-size: 1.2rem;
+            text-align: right;
         }
         
         .main-content {
@@ -101,7 +148,10 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .btn-primary {
@@ -141,6 +191,12 @@
             border-radius: 4px;
             margin-bottom: 10px;
             border-left: 4px solid var(--secondary-color);
+            transition: transform 0.2s;
+        }
+        
+        .activity-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         
         .activity-header {
@@ -156,6 +212,7 @@
         
         .activity-equipment {
             font-weight: 600;
+            font-size: 1.1rem;
         }
         
         .activity-description {
@@ -165,6 +222,7 @@
         .activity-actions {
             display: flex;
             gap: 10px;
+            margin-top: 10px;
         }
         
         .summary-section {
@@ -184,6 +242,31 @@
             margin-top: 20px;
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .notification.success {
+            background-color: var(--success-color);
+        }
+        
+        .notification.error {
+            background-color: var(--accent-color);
+        }
+        
+        .notification.show {
+            opacity: 1;
         }
         
         @media (max-width: 768px) {
@@ -196,28 +279,82 @@
                 gap: 10px;
                 text-align: center;
             }
+            
+            .header-text, .date-display {
+                text-align: center;
+            }
+            
+            .slogan {
+                border-left: none;
+                padding-left: 0;
+                border-top: 2px solid var(--secondary-color);
+                padding-top: 5px;
+                margin-top: 10px;
+            }
+            
+            .export-options {
+                flex-direction: column;
+            }
         }
         
         @media print {
-            header, .form-section, .export-options {
-                display: none;
+            .header-logo img {
+                filter: none !important;
+                -webkit-filter: none !important;
+                width: auto !important;
+                height: auto !important;
+                max-width: 160px !important;
+                max-height: 160px !important;
             }
-            
+
+            .header-content {
+                border-bottom: 1px solid #333 !important;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+
+            .slogan {
+                color: #333 !important;
+                border-left: 3px solid #333 !important;
+            }
+
+            .date-display {
+                color: #333 !important;
+            }
+
+            /* Ocultar controles e elementos interativos no print */
+            .form-section, .export-options, .btn {
+                display: none !important;
+            }
+
             .main-content {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr !important;
+            }
+
+            .report-section {
+                box-shadow: none !important;
             }
             
-            .report-section {
-                box-shadow: none;
+            .btn {
+                display: none !important;
             }
         }
     </style>
 </head>
 <body>
+    <div id="notification" class="notification"></div>
+    
     <header>
         <div class="container">
             <div class="header-content">
-                <h1>Relatório de Atividade Diária - Manutenção Elétrica</h1>
+                <div class="header-logo">
+                    <img src="stratos.png" alt="Logo Stratos" id="company-logo">
+                </div>
+                
+                <div class="header-text">
+                    <h1>Relatório de Atividade Diária - Manutenção Elétrica</h1>
+                    <div class="slogan">Camadas Que Cultiva a Vida</div>
+                </div>
                 <div class="date-display" id="current-date">Carregando data...</div>
             </div>
         </div>
@@ -258,15 +395,20 @@
                     
                     <div class="form-group">
                         <label for="description">Descrição da Atividade</label>
-                        <textarea id="description" required></textarea>
+                        <textarea id="description" required placeholder="Descreva detalhadamente a atividade realizada..."></textarea>
                     </div>
                     
                     <div class="form-group">
                         <label for="observations">Observações</label>
-                        <textarea id="observations"></textarea>
+                        <textarea id="observations" placeholder="Observações relevantes, recomendações, próximos passos..."></textarea>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">Adicionar Atividade</button>
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Adicionar Atividade
+                    </button>
                 </form>
             </section>
             
@@ -297,9 +439,33 @@
                 </div>
                 
                 <div class="export-options">
-                    <button class="btn btn-success" id="export-pdf">Exportar PDF</button>
-                    <button class="btn btn-primary" id="print-report">Imprimir Relatório</button>
-                    <button class="btn btn-danger" id="clear-report">Limpar Relatório</button>
+                    <button class="btn btn-success" id="export-pdf">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2V8H20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 13H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 17H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 9H9H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Exportar PDF
+                    </button>
+                    <button class="btn btn-primary" id="print-report">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 9V2H18V9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6 18H4C3.46957 18 2.96086 17.7893 2.58579 17.4142C2.21071 17.0391 2 16.5304 2 16V11C2 10.4696 2.21071 9.96086 2.58579 9.58579C2.96086 9.21071 3.46957 9 4 9H20C20.5304 9 21.0391 9.21071 21.4142 9.58579C21.7893 9.96086 22 10.4696 22 11V16C22 16.5304 21.7893 17.0391 21.4142 17.4142C20.96086 17.7893 20.5304 18 20 18H18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M18 14H6V22H18V14Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Imprimir Relatório
+                    </button>
+                    <button class="btn btn-danger" id="clear-report">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Limpar Relatório
+                    </button>
                 </div>
             </section>
         </div>
@@ -317,7 +483,9 @@
         const exportPdfButton = document.getElementById('export-pdf');
         const printReportButton = document.getElementById('print-report');
         const clearReportButton = document.getElementById('clear-report');
-        
+        const notification = document.getElementById('notification');
+        const companyLogo = document.getElementById('company-logo');
+
         // Array para armazenar as atividades
         let activities = JSON.parse(localStorage.getItem('maintenanceActivities')) || [];
         
@@ -377,7 +545,13 @@
                     <div class="activity-description">${activity.description}</div>
                     ${activity.observations ? `<div class="activity-observations"><strong>Observações:</strong> ${activity.observations}</div>` : ''}
                     <div class="activity-actions">
-                        <button class="btn btn-danger" onclick="removeActivity(${index})">Remover</button>
+                        <button class="btn btn-danger" onclick="removeActivity(${index})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Remover
+                        </button>
                     </div>
                 `;
                 
@@ -414,6 +588,8 @@
             // Atualizar interface
             renderActivities();
             updateCounters();
+            
+            showNotification('Atividade adicionada com sucesso!', 'success');
         }
         
         // Remover atividade
@@ -423,14 +599,48 @@
                 localStorage.setItem('maintenanceActivities', JSON.stringify(activities));
                 renderActivities();
                 updateCounters();
+                showNotification('Atividade removida com sucesso!', 'success');
             }
         }
         
+        // Mostrar notificação
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Função para converter imagem em base64
+        function getBase64Image(img) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Definir dimensões do canvas
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                
+                // Desenhar a imagem no canvas
+                ctx.drawImage(img, 0, 0);
+                
+                // Obter a imagem em base64
+                try {
+                    const dataURL = canvas.toDataURL('image/png');
+                    resolve(dataURL);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+        
         // Exportar para PDF
-        function exportToPDF() {
+        async function exportToPDF() {
             // Verificar se existem atividades
             if (activities.length === 0) {
-                alert('Não há atividades para exportar.');
+                showNotification('Não há atividades para exportar.', 'error');
                 return;
             }
             
@@ -443,10 +653,30 @@
             const margin = 15;
             let yPosition = margin;
             
+            // Adicionar logo da empresa
+            try {
+                if (companyLogo.complete && companyLogo.naturalHeight !== 0) {
+                    const logoData = await getBase64Image(companyLogo);
+                    // Ajustar o tamanho da logo para caber no PDF
+                    const logoWidth = 30;
+                    const logoHeight = (companyLogo.naturalHeight / companyLogo.naturalWidth) * logoWidth;
+                    
+                    doc.addImage(logoData, 'PNG', margin, yPosition, logoWidth, logoHeight);
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar logo:', error);
+            }
+            
             // Título
             doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
-            doc.text('RELATÓRIO DE MANUTENÇÃO ELÉTRICA', pageWidth / 2, yPosition, { align: 'center' });
+            doc.text('RELATÓRIO DE MANUTENÇÃO ELÉTRICA', pageWidth / 2, yPosition + 10, { align: 'center' });
+            yPosition += 15;
+            
+            // Slogan
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'italic');
+            doc.text('Camadas Que Cultiva a Vida', pageWidth / 2, yPosition + 5, { align: 'center' });
             yPosition += 10;
             
             // Data
@@ -459,13 +689,13 @@
                 month: 'long', 
                 day: 'numeric' 
             });
-            doc.text(`Data: ${dateString}`, margin, yPosition);
-            yPosition += 15;
+            doc.text(`Data: ${dateString}`, margin, yPosition + 15);
+            yPosition += 20;
             
             // Resumo
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
-            doc.text('RESUMO DO DIA', margin, yPosition);
+            doc.text('RESUMO DO DIA', margin, yPosition + 15);
             yPosition += 8;
             
             doc.setFontSize(10);
@@ -476,14 +706,14 @@
             const corrective = activities.filter(a => a.type === 'corretiva').length;
             const other = total - preventive - corrective;
             
-            doc.text(`Total de Atividades: ${total}`, margin, yPosition);
+            doc.text(`Total de Atividades: ${total}`, margin, yPosition + 20);
             yPosition += 5;
-            doc.text(`Manutenções Preventivas: ${preventive}`, margin, yPosition);
+            doc.text(`Manutenções Preventivas: ${preventive}`, margin, yPosition + 20);
             yPosition += 5;
-            doc.text(`Manutenções Corretivas: ${corrective}`, margin, yPosition);
+            doc.text(`Manutenções Corretivas: ${corrective}`, margin, yPosition + 20);
             yPosition += 5;
-            doc.text(`Outras Atividades: ${other}`, margin, yPosition);
-            yPosition += 10;
+            doc.text(`Outras Atividades: ${other}`, margin, yPosition + 20);
+            yPosition += 15;
             
             // Tabela de atividades
             if (yPosition > 200) {
@@ -493,7 +723,7 @@
             
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
-            doc.text('ATIVIDADES REALIZADAS', margin, yPosition);
+            doc.text('ATIVIDADES REALIZADAS', margin, yPosition + 15);
             yPosition += 10;
             
             // Preparar dados para a tabela
@@ -519,7 +749,7 @@
             
             // Adicionar tabela
             doc.autoTable({
-                startY: yPosition,
+                startY: yPosition + 15,
                 head: [['Horário', 'Técnico', 'Equipamento', 'Tipo', 'Descrição', 'Observações']],
                 body: tableData,
                 margin: { left: margin, right: margin },
@@ -540,10 +770,16 @@
             // Salvar o PDF
             const fileName = `relatorio_manutencao_${now.toISOString().split('T')[0]}.pdf`;
             doc.save(fileName);
+            
+            showNotification('PDF gerado com sucesso!', 'success');
         }
         
         // Imprimir relatório
         function printReport() {
+            if (activities.length === 0) {
+                showNotification('Não há atividades para imprimir.', 'error');
+                return;
+            }
             window.print();
         }
         
@@ -554,6 +790,7 @@
                 localStorage.removeItem('maintenanceActivities');
                 renderActivities();
                 updateCounters();
+                showNotification('Relatório limpo com sucesso!', 'success');
             }
         }
         
