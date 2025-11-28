@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Manutenção Elétrica</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -193,6 +195,20 @@
                 flex-direction: column;
                 gap: 10px;
                 text-align: center;
+            }
+        }
+        
+        @media print {
+            header, .form-section, .export-options {
+                display: none;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .report-section {
+                box-shadow: none;
             }
         }
     </style>
@@ -410,10 +426,120 @@
             }
         }
         
-        // Exportar para PDF (simulação)
+        // Exportar para PDF
         function exportToPDF() {
-            alert('Funcionalidade de exportação para PDF será implementada aqui.');
-            // Em uma implementação real, você usaria uma biblioteca como jsPDF
+            // Verificar se existem atividades
+            if (activities.length === 0) {
+                alert('Não há atividades para exportar.');
+                return;
+            }
+            
+            // Inicializar jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Configurações do documento
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            let yPosition = margin;
+            
+            // Título
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('RELATÓRIO DE MANUTENÇÃO ELÉTRICA', pageWidth / 2, yPosition, { align: 'center' });
+            yPosition += 10;
+            
+            // Data
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            const now = new Date();
+            const dateString = now.toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            doc.text(`Data: ${dateString}`, margin, yPosition);
+            yPosition += 15;
+            
+            // Resumo
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('RESUMO DO DIA', margin, yPosition);
+            yPosition += 8;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            
+            const total = activities.length;
+            const preventive = activities.filter(a => a.type === 'preventiva').length;
+            const corrective = activities.filter(a => a.type === 'corretiva').length;
+            const other = total - preventive - corrective;
+            
+            doc.text(`Total de Atividades: ${total}`, margin, yPosition);
+            yPosition += 5;
+            doc.text(`Manutenções Preventivas: ${preventive}`, margin, yPosition);
+            yPosition += 5;
+            doc.text(`Manutenções Corretivas: ${corrective}`, margin, yPosition);
+            yPosition += 5;
+            doc.text(`Outras Atividades: ${other}`, margin, yPosition);
+            yPosition += 10;
+            
+            // Tabela de atividades
+            if (yPosition > 200) {
+                doc.addPage();
+                yPosition = margin;
+            }
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('ATIVIDADES REALIZADAS', margin, yPosition);
+            yPosition += 10;
+            
+            // Preparar dados para a tabela
+            const tableData = activities.map(activity => {
+                const typeNames = {
+                    'preventiva': 'Preventiva',
+                    'corretiva': 'Corretiva',
+                    'preditiva': 'Preditiva',
+                    'instalacao': 'Instalação',
+                    'inspecao': 'Inspeção',
+                    'outro': 'Outro'
+                };
+                
+                return [
+                    activity.time,
+                    activity.technician,
+                    activity.equipment,
+                    typeNames[activity.type] || activity.type,
+                    activity.description,
+                    activity.observations || '-'
+                ];
+            });
+            
+            // Adicionar tabela
+            doc.autoTable({
+                startY: yPosition,
+                head: [['Horário', 'Técnico', 'Equipamento', 'Tipo', 'Descrição', 'Observações']],
+                body: tableData,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [52, 152, 219] },
+                alternateRowStyles: { fillColor: [236, 240, 241] },
+                tableWidth: 'auto',
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 50 },
+                    5: { cellWidth: 40 }
+                }
+            });
+            
+            // Salvar o PDF
+            const fileName = `relatorio_manutencao_${now.toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
         }
         
         // Imprimir relatório
