@@ -471,6 +471,7 @@
         </div>
     </div>
 
+
     <script>
         // Elementos DOM
         const currentDateElement = document.getElementById('current-date');
@@ -488,6 +489,9 @@
 
         // Array para armazenar as atividades
         let activities = JSON.parse(localStorage.getItem('maintenanceActivities')) || [];
+
+        // Índice do item atualmente em edição (ou null)
+        let editingIndex = null;
         
         // Atualizar data atual
         function updateCurrentDate() {
@@ -509,7 +513,7 @@
             otherCountElement.textContent = other;
         }
         
-        // Renderizar lista de atividades
+        // Renderizar lista de atividades (com suporte a edição inline)
         function renderActivities() {
             activityList.innerHTML = '';
             
@@ -534,26 +538,63 @@
                     'inspecao': 'Inspeção',
                     'outro': 'Outro'
                 };
-                
-                activityElement.innerHTML = `
-                    <div class="activity-header">
-                        <div class="activity-time">${activity.time}</div>
-                        <div class="activity-type">${typeNames[activity.type] || activity.type}</div>
-                    </div>
-                    <div class="activity-equipment">${activity.equipment}</div>
-                    <div class="activity-technician">Técnico: ${activity.technician}</div>
-                    <div class="activity-description">${activity.description}</div>
-                    ${activity.observations ? `<div class="activity-observations"><strong>Observações:</strong> ${activity.observations}</div>` : ''}
-                    <div class="activity-actions">
-                        <button class="btn btn-danger" onclick="removeActivity(${index})">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Remover
-                        </button>
-                    </div>
-                `;
+
+                // Se este item está em edição renderiza campos editáveis
+                if (index === editingIndex) {
+                    activityElement.innerHTML = `
+                        <div class="activity-header">
+                            <input type="time" id="edit-time-${index}" value="${activity.time || ''}" required>
+                            <select id="edit-type-${index}">
+                                <option value="">Selecione...</option>
+                                <option value="preventiva" ${activity.type === 'preventiva' ? 'selected' : ''}>Manutenção Preventiva</option>
+                                <option value="corretiva" ${activity.type === 'corretiva' ? 'selected' : ''}>Manutenção Corretiva</option>
+                                <option value="preditiva" ${activity.type === 'preditiva' ? 'selected' : ''}>Manutenção Preditiva</option>
+                                <option value="instalacao" ${activity.type === 'instalacao' ? 'selected' : ''}>Instalação</option>
+                                <option value="inspecao" ${activity.type === 'inspecao' ? 'selected' : ''}>Inspeção</option>
+                                <option value="outro" ${activity.type === 'outro' ? 'selected' : ''}>Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="edit-equipment-${index}" placeholder="Equipamento/Sistema" value="${activity.equipment || ''}">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="edit-technician-${index}" placeholder="Técnico" value="${activity.technician || ''}">
+                        </div>
+                        <div class="form-group">
+                            <textarea id="edit-description-${index}" placeholder="Descrição">${activity.description || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="edit-observations-${index}" placeholder="Observações">${activity.observations || ''}</textarea>
+                        </div>
+                        <div class="activity-actions">
+                            <button class="btn btn-success" onclick="saveEditedActivity(${index})">Salvar</button>
+                            <button class="btn btn-danger" onclick="cancelEdit(${index})">Cancelar</button>
+                        </div>
+                    `;
+                } else {
+                    activityElement.innerHTML = `
+                        <div class="activity-header">
+                            <div class="activity-time">${activity.time}</div>
+                            <div class="activity-type">${typeNames[activity.type] || activity.type}</div>
+                        </div>
+                        <div class="activity-equipment">${activity.equipment}</div>
+                        <div class="activity-technician">Técnico: ${activity.technician}</div>
+                        <div class="activity-description">${activity.description}</div>
+                        ${activity.observations ? `<div class="activity-observations"><strong>Observações:</strong> ${activity.observations}</div>` : ''}
+                        <div class="activity-actions">
+                            <button class="btn btn-primary" onclick="editActivity(${index})">
+                                Editar
+                            </button>
+                            <button class="btn btn-danger" onclick="removeActivity(${index})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Remover
+                            </button>
+                        </div>
+                    `;
+                }
                 
                 activityList.appendChild(activityElement);
             });
@@ -585,11 +626,58 @@
             // Limpar formulário
             activityForm.reset();
             
+            // Definir edição imediata para o item recém-adicionado (último índice)
+            editingIndex = activities.length - 1;
+            
             // Atualizar interface
             renderActivities();
             updateCounters();
             
-            showNotification('Atividade adicionada com sucesso!', 'success');
+            showNotification('Atividade adicionada. Editando imediatamente...', 'success');
+        }
+        
+        // Editar atividade (abrir em modo edição)
+        function editActivity(index) {
+            editingIndex = index;
+            renderActivities();
+        }
+
+        // Salvar edição
+        function saveEditedActivity(index) {
+            const technician = document.getElementById(`edit-technician-${index}`).value;
+            const time = document.getElementById(`edit-time-${index}`).value;
+            const equipment = document.getElementById(`edit-equipment-${index}`).value;
+            const type = document.getElementById(`edit-type-${index}`).value;
+            const description = document.getElementById(`edit-description-${index}`).value;
+            const observations = document.getElementById(`edit-observations-${index}`).value;
+            
+            // Validação mínima
+            if (!time || !technician || !equipment || !type || !description) {
+                showNotification('Preencha os campos obrigatórios antes de salvar.', 'error');
+                return;
+            }
+            
+            activities[index] = {
+                technician,
+                time,
+                equipment,
+                type,
+                description,
+                observations
+            };
+            
+            localStorage.setItem('maintenanceActivities', JSON.stringify(activities));
+            editingIndex = null;
+            renderActivities();
+            updateCounters();
+            showNotification('Atividade atualizada com sucesso!', 'success');
+        }
+
+        // Cancelar edição
+        function cancelEdit(index) {
+            editingIndex = null;
+            renderActivities();
+            showNotification('Edição cancelada.', 'error');
         }
         
         // Remover atividade
@@ -597,6 +685,7 @@
             if (confirm('Tem certeza que deseja remover esta atividade?')) {
                 activities.splice(index, 1);
                 localStorage.setItem('maintenanceActivities', JSON.stringify(activities));
+                editingIndex = null;
                 renderActivities();
                 updateCounters();
                 showNotification('Atividade removida com sucesso!', 'success');
@@ -809,6 +898,10 @@
         
         // Tornar funções globais para uso nos event listeners inline
         window.removeActivity = removeActivity;
+        window.editActivity = editActivity;
+        window.saveEditedActivity = saveEditedActivity;
+        window.cancelEdit = cancelEdit;
     </script>
+
 </body>
 </html>
